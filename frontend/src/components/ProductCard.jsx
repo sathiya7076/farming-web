@@ -10,7 +10,6 @@ export default function ProductCard({ product: p }) {
   const { user } = useAuth();
   const { addToCart, toggleWish, wishIds } = useCart();
   const navigate = useNavigate();
-  // FIX: wishIds undefined-ah irundhaalum crash aagadhu
   const wished = Array.isArray(wishIds) ? wishIds.includes(p._id) : false;
   const canBuy = !user || user.role === 'client';
 
@@ -22,8 +21,14 @@ export default function ProductCard({ product: p }) {
 
   return (
     <div className="card group flex flex-col overflow-hidden transition hover:-translate-y-1 hover:shadow-lg">
-      <Link to={`/products/${p._id}`} className="relative block">
-        <SafeImage src={p.images?.[0]?.url} alt={p.name} emoji={categoryEmoji(p.category?.name)} className="h-44 w-full transition group-hover:scale-105" />
+      {/* FIX: fixed height box + overflow-hidden, image full cover */}
+      <Link to={`/products/${p._id}`} className="relative block h-44 w-full overflow-hidden">
+        <SafeImage
+          src={p.images?.[0]?.url}
+          alt={p.name}
+          emoji={categoryEmoji(p.category?.name)}
+          className="h-full w-full !object-cover"
+        />
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{p.category?.name}</span>
         {user?.role === 'client' && (
           <button

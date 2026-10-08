@@ -6,6 +6,8 @@ import QueryBoundary from '../components/QueryBoundary.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import FarmerCard from '../components/FarmerCard.jsx';
 import Stars from '../components/Stars.jsx';
+import HomeLogin from '../components/HomeLogin.jsx'; // ADDED
+import { useAuth } from '../context/AuthContext.jsx'; // ADDED
 import { categoryEmoji } from '../utils/format.js';
 
 const STEPS = [
@@ -23,6 +25,8 @@ const WHY = [
 
 export default function Home() {
   const { data, loading, error, reload } = useFetch('/public/home');
+  const { user, loading: authLoading } = useAuth(); // ADDED
+  const showLogin = !authLoading && !user; // ADDED
   const [q, setQ] = useState('');
   const navigate = useNavigate();
   const search = (e) => {
@@ -41,25 +45,33 @@ export default function Home() {
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="container-page relative py-20 sm:py-28">
-          <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur">
-            <Leaf className="h-4 w-4" /> Smart Farming Marketplace
-          </p>
-          <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight text-white sm:text-6xl">Fresh From Farmers</h1>
-          <p className="mt-4 max-w-xl text-lg text-brand-50">Buy vegetables, fruits, grains and more straight from the people who grow them.</p>
-          <form onSubmit={search} className="mt-8 flex max-w-xl overflow-hidden rounded-full bg-white p-1.5 shadow-xl">
-            <div className="flex flex-1 items-center gap-2 px-4">
-              <Search className="h-5 w-5 text-gray-400" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tomatoes, rice, mangoes…" className="w-full bg-transparent py-2 text-gray-800 outline-none placeholder:text-gray-400" aria-label="Search products" />
+          {/* ADDED: wrapper grid (login irundha 2 columns, illana 1 column) */}
+          <div className={showLogin ? 'grid items-center gap-10 lg:grid-cols-[1fr_380px]' : ''}>
+            <div>
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur">
+                <Leaf className="h-4 w-4" /> Smart Farming Marketplace
+              </p>
+              <h1 className="max-w-3xl font-display text-4xl font-bold leading-tight text-white sm:text-6xl">Fresh From Farmers</h1>
+              <p className="mt-4 max-w-xl text-lg text-brand-50">Buy vegetables, fruits, grains and more straight from the people who grow them.</p>
+              <form onSubmit={search} className="mt-8 flex max-w-xl overflow-hidden rounded-full bg-white p-1.5 shadow-xl">
+                <div className="flex flex-1 items-center gap-2 px-4">
+                  <Search className="h-5 w-5 text-gray-400" />
+                  <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search tomatoes, rice, mangoes…" className="w-full bg-transparent py-2 text-gray-800 outline-none placeholder:text-gray-400" aria-label="Search products" />
+                </div>
+                <button className="btn-primary px-6">Search</button>
+              </form>
+              {data && (
+                <dl className="mt-10 grid max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
+                  {[['Farmers', data.stats.farmers], ['Products', data.stats.products], ['Customers', data.stats.clients], ['Orders delivered', data.stats.delivered]].map(([l, v]) => (
+                    <div key={l}><dt className="text-xs uppercase tracking-wide text-brand-100">{l}</dt><dd className="font-display text-3xl font-bold">{v}+</dd></div>
+                  ))}
+                </dl>
+              )}
             </div>
-            <button className="btn-primary px-6">Search</button>
-          </form>
-          {data && (
-            <dl className="mt-10 grid max-w-2xl grid-cols-2 gap-4 sm:grid-cols-4">
-              {[['Farmers', data.stats.farmers], ['Products', data.stats.products], ['Customers', data.stats.clients], ['Orders delivered', data.stats.delivered]].map(([l, v]) => (
-                <div key={l}><dt className="text-xs uppercase tracking-wide text-brand-100">{l}</dt><dd className="font-display text-3xl font-bold">{v}+</dd></div>
-              ))}
-            </dl>
-          )}
+
+            {/* ADDED: login form */}
+            <HomeLogin />
+          </div>
         </div>
       </section>
 

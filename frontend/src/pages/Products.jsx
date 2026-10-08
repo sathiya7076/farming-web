@@ -75,7 +75,8 @@ export default function Products({ embedded = false }) {
         </div>
       </form>
 
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-1">
+      {/* FIX: no-scrollbar added, scroll work aagum but bar theriyaadhu */}
+      <div className="no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-1">
         <button onClick={() => update({ category: '' })} className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium ${!get('category') ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300'}`}>All</button>
         {cats?.map((c) => (
           <button key={c._id} onClick={() => update({ category: c.slug })} className={`whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium ${get('category') === c.slug ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300'}`}>
