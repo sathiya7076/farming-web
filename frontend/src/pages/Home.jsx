@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Leaf, Quote, Search, ShieldCheck, ShoppingCart, Sprout, Truck, Wallet } from 'lucide-react';
+import { ArrowRight, BadgeCheck, ChevronLeft, ChevronRight, Leaf, Quote, Search, ShieldCheck, ShoppingCart, Sprout, Truck, Wallet } from 'lucide-react';
 import useFetch from '../hooks/useFetch.js';
 import QueryBoundary from '../components/QueryBoundary.jsx';
 import ProductCard from '../components/ProductCard.jsx';
 import FarmerCard from '../components/FarmerCard.jsx';
 import Stars from '../components/Stars.jsx';
-import HomeLogin from '../components/HomeLogin.jsx'; // ADDED
-import { useAuth } from '../context/AuthContext.jsx'; // ADDED
+import HomeLogin from '../components/HomeLogin.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { categoryEmoji } from '../utils/format.js';
 
 const STEPS = [
@@ -23,10 +23,36 @@ const WHY = [
   { icon: BadgeCheck, title: 'Real reviews', text: 'Only customers with delivered orders can leave ratings.' },
 ];
 
+// ADDED: reusable horizontal scroller with left/right side buttons
+function ScrollRow({ items, render }) {
+  const ref = useRef(null);
+  const go = (dir) => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.8, 260), behavior: 'smooth' });
+  };
+  const btn = 'absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white text-brand-700 shadow-lg ring-1 ring-gray-200 transition hover:bg-brand-50 sm:flex';
+  return (
+    <div className="relative">
+      <button type="button" onClick={() => go(-1)} aria-label="Scroll left" className={`${btn} -left-3`}>
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <div ref={ref} className="flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-4" style={{ scrollbarWidth: 'none' }}>
+        {items.map((item) => (
+          <div key={item._id} className="w-64 shrink-0 snap-start sm:w-72">{render(item)}</div>
+        ))}
+      </div>
+      <button type="button" onClick={() => go(1)} aria-label="Scroll right" className={`${btn} -right-3`}>
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const { data, loading, error, reload } = useFetch('/public/home');
-  const { user, loading: authLoading } = useAuth(); // ADDED
-  const showLogin = !authLoading && !user; // ADDED
+  const { user, loading: authLoading } = useAuth();
+  const showLogin = !authLoading && !user;
   const [q, setQ] = useState('');
   const navigate = useNavigate();
   const search = (e) => {
@@ -34,6 +60,9 @@ export default function Home() {
     navigate(`/products${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`);
   };
 
+  // ADDED: latest products - existing /products list endpoint (sort=latest) use panrom, backend change thevai illa
+  const { data: latestRes } = useFetch('/products?sort=latest&limit=8');
+  const latestProducts = Array.isArray(latestRes) ? latestRes : latestRes?.data ?? [];
   return (
     <>
       {/* Hero */}
@@ -45,7 +74,6 @@ export default function Home() {
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="container-page relative py-20 sm:py-28">
-          {/* ADDED: wrapper grid (login irundha 2 columns, illana 1 column) */}
           <div className={showLogin ? 'grid items-center gap-10 lg:grid-cols-[1fr_380px]' : ''}>
             <div>
               <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur">
@@ -69,7 +97,6 @@ export default function Home() {
               )}
             </div>
 
-            {/* ADDED: login form */}
             <HomeLogin />
           </div>
         </div>
@@ -93,15 +120,26 @@ export default function Home() {
                 </div>
               </section>
 
+              {/* ADDED: Latest products (currently added products) */}
+              <section>
+                <div className="mb-8 flex items-end justify-between">
+                  <div><h2 className="section-title">Latest Products</h2><p className="mt-2 text-gray-500">Freshly added by our farmers</p></div>
+                  <Link to="/products?sort=latest" className="hidden items-center gap-1 text-sm font-semibold text-brand-700 sm:flex">View all <ArrowRight className="h-4 w-4" /></Link>
+                </div>
+                {latestProducts.length === 0 ? (
+                  <p className="text-center text-gray-500">No products added yet.</p>
+                ) : (
+                  <ScrollRow items={latestProducts} render={(p) => <ProductCard product={p} />} />
+                )}
+              </section>
+
               {/* Featured products */}
               <section>
                 <div className="mb-8 flex items-end justify-between">
                   <div><h2 className="section-title">Featured Products</h2><p className="mt-2 text-gray-500">Hand-picked and top rated</p></div>
                   <Link to="/products" className="hidden items-center gap-1 text-sm font-semibold text-brand-700 sm:flex">View all <ArrowRight className="h-4 w-4" /></Link>
                 </div>
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {data.featuredProducts.map((p) => <ProductCard key={p._id} product={p} />)}
-                </div>
+                <ScrollRow items={data.featuredProducts} render={(p) => <ProductCard product={p} />} />
               </section>
 
               {/* Featured farmers */}

@@ -32,8 +32,8 @@ export default function Footer() {
         <div>
           <h4 className="mb-3 font-semibold text-white">Contact</h4>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> support@agriconnect.com</li>
-            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> +91 98000 00000</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4" /> sathi2392005@gmail.com</li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4" /> +91 8270300239</li>
             <li className="flex items-center gap-2"><MapPin className="h-4 w-4" /> India</li>
           </ul>
         </div>

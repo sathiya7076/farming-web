@@ -29,7 +29,7 @@ export default function Contact() {
       <div className="mb-10 text-center"><h1 className="section-title">Contact Us</h1><p className="mt-2 text-gray-500">Questions, feedback or want to partner with us? We’d love to hear from you.</p></div>
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-5">
         <div className="space-y-4 lg:col-span-2">
-          {[[Mail, 'Email', 'support@agriconnect.com'], [Phone, 'Phone', '+91 98000 00000'], [MapPin, 'Address', 'AgriConnect HQ, India']].map(([Icon, l, v]) => (
+          {[[Mail, 'Email', 'sathi2392005@gmail.com'], [Phone, 'Phone', '+91 8270300239'], [MapPin, 'Address', 'AgriConnect HQ, India']].map(([Icon, l, v]) => (
             <div key={l} className="card flex items-center gap-4 p-5">
               <span className="rounded-xl bg-brand-50 p-3 text-brand-700"><Icon className="h-5 w-5" /></span>
               <div><p className="text-xs uppercase text-gray-500">{l}</p><p className="font-medium">{v}</p></div>
