@@ -25,6 +25,7 @@ export default function ProductForm() {
   const [files, setFiles] = useState([]);
   const [removed, setRemoved] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [mapLink, setMapLink] = useState('');
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   useEffect(() => {
@@ -33,11 +34,29 @@ export default function ProductForm() {
       name: existing.name, category: existing.category?._id || '', price: existing.price, unit: existing.unit,
       quantity: existing.quantity, location: existing.location, harvestDate: toInputDate(existing.harvestDate), description: existing.description,
     });
+    setMapLink(existing.mapLink || '');
   }, [existing]);
 
   useEffect(() => {
     if (me?.profile?.location) setForm((f) => (f.location ? f : { ...f, location: me.profile.location }));
   }, [me]);
+
+  // Preview: pull lat/lng out of a Google Maps link (@lat,lng / q=lat,lng / !3d..!4d..)
+  const coords = (() => {
+    const m =
+      mapLink.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+      mapLink.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/) ||
+      mapLink.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/);
+    return m ? { lat: m[1], lng: m[2] } : null;
+  })();
+
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return toast.error('Location is not supported in this browser');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setMapLink(`https://www.google.com/maps?q=${pos.coords.latitude.toFixed(6)},${pos.coords.longitude.toFixed(6)}`),
+      () => toast.error('Could not get your location. Please allow location access.')
+    );
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -46,6 +65,7 @@ export default function ProductForm() {
 
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+    fd.append('mapLink', mapLink.trim());
     files.forEach((f) => fd.append('images', f));
     if (editing) fd.append('removeImages', JSON.stringify(removed));
 
@@ -93,6 +113,36 @@ export default function ProductForm() {
             <div><label className="label" htmlFor="pf-date">Harvest date</label><input id="pf-date" type="date" required className="input" value={form.harvestDate} onChange={set('harvestDate')} /></div>
             <div className="sm:col-span-2"><label className="label" htmlFor="pf-desc">Description</label><textarea id="pf-desc" required minLength={10} maxLength={2000} rows={5} className="input" placeholder="Variety, farming method, taste, how it is packed…" value={form.description} onChange={set('description')} /></div>
           </div>
+
+          {/* NEW: Google Map location */}
+          <div>
+            <label className="label" htmlFor="pf-map">Google Map location <span className="text-gray-400">(optional)</span></label>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                id="pf-map"
+                type="url"
+                maxLength={500}
+                className="input flex-1"
+                placeholder="Paste Google Maps link of your farm / pickup point"
+                value={mapLink}
+                onChange={(e) => setMapLink(e.target.value)}
+              />
+              <button type="button" className="btn-ghost" onClick={useMyLocation}>📍 Use my current location</button>
+            </div>
+            <p className="mt-1 text-xs text-gray-500">Google Maps-la place open pannitu Share → Copy link paste pannunga.</p>
+            {coords && (
+              <iframe
+                title="Map preview"
+                className="mt-3 h-56 w-full rounded-lg border"
+                loading="lazy"
+                src={`https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`}
+              />
+            )}
+            {mapLink && !coords && (
+              <a href={mapLink} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-green-700 underline">Open in Google Maps</a>
+            )}
+          </div>
+
           <div>
             <label className="label">Product images</label>
             <ImageUploader existing={existing?.images || []} files={files} setFiles={setFiles} removed={removed} setRemoved={setRemoved} />

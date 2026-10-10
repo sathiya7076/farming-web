@@ -19,6 +19,8 @@ const productSchema = new mongoose.Schema(
     ratingAvg: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
     featured: { type: Boolean, default: false },
+    // NEW: Google Maps link of the farm / pickup point (optional)
+    mapLink: { type: String, trim: true, maxlength: 500, default: '' },
   },
   { timestamps: true }
 );
