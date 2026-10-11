@@ -26,6 +26,7 @@ export default function Cart() {
   const [saveAddress, setSaveAddress] = useState(true);
   const [payment, setPayment] = useState('COD');
   const [placing, setPlacing] = useState(false);
+  const [savingAddr, setSavingAddr] = useState(false);
 
   useEffect(() => {
     if (addresses.length && !addressId) setAddressId((addresses.find((a) => a.isDefault) || addresses[0])._id);
@@ -69,6 +70,26 @@ export default function Cart() {
   };
 
   const setA = (k) => (e) => setAddr({ ...addr, [k]: e.target.value });
+
+  // NEW: order place pannaama address-ah mattum save pannum
+  const saveNewAddress = async () => {
+    if (!addr.fullName.trim() || !addr.phone.trim() || !addr.line1.trim() || !addr.city.trim()) {
+      toast.error('Please fill name, phone, address line and city');
+      return;
+    }
+    setSavingAddr(true);
+    try {
+      await api.post('/profile/addresses', addr);
+      toast.success('Address saved');
+      setAddr(NEW_ADDR);
+      setAddressId('');
+      profile.reload();
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setSavingAddr(false);
+    }
+  };
 
   return (
     <div>
@@ -127,6 +148,9 @@ export default function Cart() {
                   <input className="input" placeholder="State" value={addr.state} onChange={setA('state')} />
                   <input className="input" placeholder="Pincode" value={addr.pincode} onChange={setA('pincode')} />
                   <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} /> Save this address for next time</label>
+                  <button type="button" className="btn-primary btn-sm sm:col-span-2" onClick={saveNewAddress} disabled={savingAddr}>
+                    {savingAddr ? 'Saving…' : 'Save address'}
+                  </button>
                 </div>
               )}
             </div>
