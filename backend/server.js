@@ -5,33 +5,67 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 
 const required = ['MONGODB_URI', 'JWT_SECRET', 'CLIENT_URL'];
-required.forEach((k) => {
-  if (!process.env[k]) {
-    console.error(`Missing ${k} in .env`);
-    process.exit(1);
-  }
-});
+const missing = required.filter((k) => !process.env[k]);
+if (missing.length) {
+  console.error(`Missing env vars: ${missing.join(', ')}`);
+  // Local-la mattum exit pannum. Vercel-la exit pannina "exit status 1" crash varum.
+  if (!process.env.VERCEL) process.exit(1);
+}
 
 const app = express();
 
-// Needed on Render / Railway / Heroku, otherwise the Secure cookie is never set
+// Needed on Vercel / Render / Railway / Heroku, otherwise the Secure cookie is never set
 app.set('trust proxy', 1);
 
 // ---- middleware (ORDER MATTERS: these must come before the routes) ----
 app.use(
   cors({
-    origin: process.env.CLIENT_URL.split(',').map((s) => s.trim()), // exact origin(s), NOT '*'
+    origin: (process.env.CLIENT_URL || '').split(',').map((s) => s.trim()), // exact origin(s), NOT '*'
     credentials: true, // REQUIRED for cookies
   })
 );
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
-// ---- routes ----
+// ---- MongoDB (cached connection, serverless-ku mukkiyam) ----
+let cached = global._mongoose;
+if (!cached) cached = global._mongoose = { conn: null, promise: null };
+
+async function connectDB() {
+  if (cached.conn) return cached.conn;
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGODB_URI).then(async (m) => {
+      // make sure the unique email index exists (the duplicate-email check relies on it)
+      await require('./models/User').init();
+      console.log('MongoDB connected');
+      return m;
+    });
+  }
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null; // next request-la retry aagum
+    throw err;
+  }
+  return cached.conn;
+}
+
+// Health check DB-ku munnadiye work aagum (debug-ku useful)
 app.get('/api/health', (_req, res) => res.json({ success: true, message: 'API is running' }));
+
+// Every other request-ku munnadi DB connect
+app.use(async (_req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('MongoDB connection failed:', err.message);
+    res.status(500).json({ success: false, message: 'Database connection failed' });
+  }
+});
+
+// ---- routes ----
 app.use('/api/auth', require('./routes/authRoutes'));
-// ADDED: other routes
-// ADDED: other routes
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/farmers', require('./routes/farmerRoutes'));
@@ -77,18 +111,17 @@ app.use((err, _req, res, _next) => {
   });
 });
 
-// ---- start ----
-const PORT = process.env.PORT || 5000;
+// ---- start (local only) ----
+// Vercel-la app.listen() podakoodadhu. Local-la mattum run aagum.
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  connectDB()
+    .then(() => app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`)))
+    .catch((err) => {
+      console.error('MongoDB connection failed:', err.message);
+      process.exit(1);
+    });
+}
 
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(async () => {
-    // make sure the unique email index exists (the duplicate-email check relies on it)
-    await require('./models/User').init();
-    console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
-  })
-  .catch((err) => {
-    console.error('MongoDB connection failed:', err.message);
-    process.exit(1);
-  });
+// Vercel-ku idhu dhaan "No exports found" error-ku main fix
+module.exports = app;
