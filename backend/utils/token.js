@@ -11,7 +11,8 @@ const verifyToken = (token) =>
 
 // Cross-site deployment (Vercel frontend + separate API domain) needs SameSite=None + Secure.
 const cookieOptions = () => {
-  const prod = process.env.NODE_ENV === 'production';
+  // On Vercel always use SameSite=None + Secure, even if NODE_ENV was set to "development" by mistake
+  const prod = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
   return {
     httpOnly: true,
     sameSite: prod ? 'none' : 'lax',
