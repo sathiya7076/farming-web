@@ -101,7 +101,7 @@ const REVIEW_TEXT = [
   const catByName = Object.fromEntries(cats.map((c) => [c.name, c]));
 
   // ---- admin ----
-  const admin = await User.create({ name: 'AgriConnect Admin', email: 'admin@agriconnect.com', password: process.env.SEED_ADMIN_PASSWORD, role: 'admin', phone: '+91 98000 00000' });
+  const admin = await User.create({ name: 'AgriConnect Admin', email: 'sathi2392005@gmail.com', password: process.env.SEED_ADMIN_PASSWORD, role: 'admin', phone: '+91 8270300239' });
 
   // ---- farmers ----
   const farmers = [];
@@ -222,7 +222,7 @@ const REVIEW_TEXT = [
 
   console.log('\nSeed complete ✔');
   console.log('Demo logins:');
-  console.log('  Admin  : admin@agriconnect.com   /', process.env.SEED_ADMIN_PASSWORD);
+  console.log('  Admin  : sathi2392005@gmail.com   /', process.env.SEED_ADMIN_PASSWORD);
   console.log('  Farmer : farmer1@agriconnect.com /', process.env.SEED_FARMER_PASSWORD, '(farmer1..farmer5)');
   console.log('  Client : client1@agriconnect.com /', process.env.SEED_CLIENT_PASSWORD, '(client1..client10)');
   await mongoose.disconnect();
