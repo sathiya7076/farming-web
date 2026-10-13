@@ -18,12 +18,27 @@ const app = express();
 app.set('trust proxy', 1);
 
 // ---- middleware (ORDER MATTERS: these must come before the routes) ----
-app.use(
-  cors({
-    origin: (process.env.CLIENT_URL || '').split(',').map((s) => s.trim()), // exact origin(s), NOT '*'
-    credentials: true, // REQUIRED for cookies
-  })
-);
+// CLIENT_URL = comma-separated frontend origin(s). Trailing "/" and spaces are stripped because
+// the browser's Origin header NEVER has a trailing slash, so "https://x.vercel.app/" would never match.
+const allowedOrigins = (process.env.CLIENT_URL || '')
+  .split(',')
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+
+const corsOptions = {
+  origin(origin, cb) {
+    // no Origin header = curl / Postman / server-to-server -> allow
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    console.warn(`CORS blocked origin: ${origin} | allowed: ${allowedOrigins.join(', ') || '(none)'}`);
+    return cb(null, false);
+  },
+  credentials: true, // REQUIRED for cookies
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // answer preflight before anything else (DB, auth)
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
