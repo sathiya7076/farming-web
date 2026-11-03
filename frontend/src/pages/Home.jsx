@@ -23,7 +23,10 @@ const WHY = [
   { icon: BadgeCheck, title: 'Real reviews', text: 'Only customers with delivered orders can leave ratings.' },
 ];
 
-// ADDED: reusable horizontal scroller with left/right side buttons
+// Vegetables category slug - ungal category link-la enna slug irukko adha inga maathunga
+const VEG_SLUG = 'vegetables';
+
+// Reusable horizontal scroller with left/right side buttons
 function ScrollRow({ items, render }) {
   const ref = useRef(null);
   const go = (dir) => {
@@ -60,9 +63,14 @@ export default function Home() {
     navigate(`/products${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`);
   };
 
-  // ADDED: latest products - existing /products list endpoint (sort=latest) use panrom, backend change thevai illa
+  // Latest products (newest first) - existing /products endpoint, backend change thevai illa
   const { data: latestRes } = useFetch('/products?sort=latest&limit=8');
   const latestProducts = Array.isArray(latestRes) ? latestRes : latestRes?.data ?? [];
+
+  // Featured vegetables - uploaded vegetable products (newest first)
+  const { data: vegRes } = useFetch(`/products?category=${VEG_SLUG}&sort=latest&limit=8`);
+  const vegProducts = Array.isArray(vegRes) ? vegRes : vegRes?.data ?? [];
+
   return (
     <>
       {/* Hero */}
@@ -120,7 +128,7 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* ADDED: Latest products (currently added products) */}
+              {/* Latest products (currently added products) */}
               <section>
                 <div className="mb-8 flex items-end justify-between">
                   <div><h2 className="section-title">Latest Products</h2><p className="mt-2 text-gray-500">Freshly added by our farmers</p></div>
@@ -133,13 +141,17 @@ export default function Home() {
                 )}
               </section>
 
-              {/* Featured products */}
+              {/* Featured vegetables (uploaded vegetable products) */}
               <section>
                 <div className="mb-8 flex items-end justify-between">
-                  <div><h2 className="section-title">Featured Products</h2><p className="mt-2 text-gray-500">Hand-picked and top rated</p></div>
-                  <Link to="/products" className="hidden items-center gap-1 text-sm font-semibold text-brand-700 sm:flex">View all <ArrowRight className="h-4 w-4" /></Link>
+                  <div><h2 className="section-title">Featured Vegetables</h2><p className="mt-2 text-gray-500">Fresh vegetables uploaded by our farmers</p></div>
+                  <Link to={`/products?category=${VEG_SLUG}`} className="hidden items-center gap-1 text-sm font-semibold text-brand-700 sm:flex">View all <ArrowRight className="h-4 w-4" /></Link>
                 </div>
-                <ScrollRow items={data.featuredProducts} render={(p) => <ProductCard product={p} />} />
+                {vegProducts.length === 0 ? (
+                  <p className="text-center text-gray-500">No vegetables added yet.</p>
+                ) : (
+                  <ScrollRow items={vegProducts} render={(p) => <ProductCard product={p} />} />
+                )}
               </section>
 
               {/* Featured farmers */}
